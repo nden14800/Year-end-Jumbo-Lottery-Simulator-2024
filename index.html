@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年末ジャンボ宝くじシミュレーター | モダン版 v4.5 (Final)</title>
+    <meta name="description" content="2つのモードと詳細設定で宝くじの当選をシミュレーション。あなたの運を試してみましょう。">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 基本設定と変数 --- */
+        :root {
+            --bg-color-start: #2a2a72;
+            --bg-color-end: #009ffd;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border-color: rgba(255, 255, 255, 0.2);
+            --text-color: #f0f2f5;
+            --text-secondary-color: #b0b3b8;
+            --primary-color: #3d9dff;
+            --primary-hover-color: #5aa9ff;
+            --danger-color: #ff4d4d;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --loader-color: #ffffff;
+            --gold-color: #ffd700;
+            --silver-color: #c0c0c0;
+            --bronze-color: #cd7f32;
+            --win-glow-color: rgba(255, 223, 0, 0.7);
+        }
+
+        :root.light {
+            --bg-color-start: #e4e9fd;
+            --bg-color-end: #dce7ff;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --card-border-color: rgba(0, 0, 0, 0.1);
+            --text-color: #1c1e21;
+            --text-secondary-color: #606770;
+            --primary-color: #0866ff;
+            --primary-hover-color: #0058e0;
+            --loader-color: #000000;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Roboto', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background: linear-gradient(135deg, var(--bg-color-start), var(--bg-color-end));
+            color: var(--text-color);
+            transition: background 0.5s, color 0.5s;
+            line-height: 1.6;
+            background-attachment: fixed;
+        }
+
+        .font-roboto { font-family: 'Roboto', sans-serif; }
+        .font-mono { font-family: 'Roboto Mono', monospace; }
+
+        /* --- レイアウトとヘッダー --- */
+        .header-container { max-width: 950px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .container { max-width: 950px; margin: 1rem auto; padding: 0 1rem; }
+        header { text-align: center; margin-bottom: 2rem; color: #fff; flex-grow: 1; }
+        header h1 { font-size: 2.8rem; font-weight: 700; text-shadow: 0 2px 8px var(--shadow-color); }
+        header p { font-size: 1.2rem; opacity: 0.9; }
+
+        /* --- アイコンボタン共通 --- */
+        .icon-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; line-height: 0; }
+        .icon-btn svg { width: 28px; height: 28px; fill: var(--text-color); transition: all 0.3s; }
+        #settings-btn svg { fill: #fff; }
+        #settings-btn:hover svg { transform: rotate(45deg); }
+        
+        /* --- モーダル (設定画面) --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1000;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background: var(--bg-color-end); border: 1px solid var(--card-border-color);
+            padding: 2rem; border-radius: 16px; width: 90%; max-width: 600px;
+            max-height: 90vh; overflow-y: auto;
+            transform: scale(0.9); transition: transform 0.3s;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h2 { font-size: 1.5rem; }
+        .modal-close-btn svg { width: 24px; height: 24px; }
+        .modal-close-btn:hover svg { opacity: 0.7; }
+
+        .setting-group { margin-bottom: 2rem; }
+        .setting-group h3 { font-size: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--card-border-color); padding-bottom: 0.5rem;}
+        
+        .probability-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+        .prob-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+        .prob-item label { flex-shrink: 0; }
+        .prob-input-wrapper { display: flex; align-items: center; gap: 0.5rem; width: 100%; }
+        .prob-item input { 
+            width: 100%; padding: 0.3rem 0.5rem; background: rgba(0,0,0,0.2); 
+            border: 1px solid var(--card-border-color); color: var(--text-color); 
+            border-radius: 5px; font-family: 'Roboto Mono', monospace; text-align: right;
+        }
+        .cheat-notice { color: var(--danger-color); font-size: 0.9rem; margin-top: 1rem; text-align: center; }
+
+        .toggle-setting { display: flex; justify-content: space-between; align-items: center; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px;}
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%;}
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .modal-footer { margin-top: 2rem; text-align: right; }
+
+        /* --- カードスタイル --- */
+        .card { background: var(--card-bg); border-radius: 16px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 8px 32px 0 var(--shadow-color); border: 1px solid var(--card-border-color); }
+        .card-header { font-size: 1.4rem; font-weight: 500; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--card-border-color); }
+        
+        /* --- モードセレクター --- */
+        .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .mode-tab { flex-grow: 1; padding: 0.8rem 1rem; border: none; background: var(--card-bg); color: var(--text-secondary-color); border-radius: 10px 10px 0 0; cursor: pointer; transition: all 0.3s; font-size: 1rem; font-weight: 500; }
+        .mode-tab.active { background: var(--primary-color); color: #fff; }
+        .simulation-mode { display: none; }
+        .simulation-mode.active { display: block; }
+
+        /* --- コントロール全般 --- */
+        .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1.5rem; }
+        .controls button { background-color: var(--primary-color); color: white; border: none; padding: 0.8rem 1.8rem; border-radius: 10px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px -5px rgba(0,0,0,0.4); }
+        .controls button:hover:not(:disabled) { background-color: var(--primary-hover-color); transform: translateY(-3px); box-shadow: 0 6px 20px -5px rgba(0,0,0,0.5); }
+        .controls button:disabled { background-color: #6c757d; cursor: not-allowed; opacity: 0.7; transform: none; box-shadow: none; }
+        .controls button.reset { background-color: #6c757d; }
+        .controls button.reset:hover:not(:disabled) { background-color: #5a6268; }
+
+        .speed-control { display: flex; align-items: center; gap: 0.75rem; }
+        .speed-control input[type="radio"] { display: none; }
+        .speed-control label { padding: 0.5rem 1rem; border: 1px solid var(--card-border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .speed-control input[type="radio"]:checked + label { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .ticket-input { background-color: rgba(0,0,0,0.2); border: 1px solid var(--card-border-color); color: var(--text-color); border-radius: 8px; padding: 0.8rem 1rem; font-size: 1.2rem; width: 200px; text-align: center; }
+        .ticket-input::placeholder { color: var(--text-secondary-color); }
+
+        .loader { width: 24px; height: 24px; border: 3px solid transparent; border-top-color: var(--loader-color); border-radius: 50%; animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
+        .loader.hidden { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .latest-ticket-display { text-align: center; font-size: 1.8rem; font-weight: 700; }
+        .latest-ticket-display .ticket-number { display: inline-block; background: rgba(0,0,0,0.2); padding: 0.75rem 1.5rem; border-radius: 10px; color: #fff; min-width: 320px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1.5rem; text-align: center; }
+        .summary-item h3 { font-size: 1rem; font-weight: 400; color: var(--text-secondary-color); margin-bottom: 0.25rem; }
+        .summary-item p { font-size: 1.8rem; font-weight: 700; }
+        .summary-item p.balance-plus { color: #28a745; }
+        .summary-item p.balance-minus { color: #dc3545; }
+
+        .result-item-header { display: grid; grid-template-columns: 3fr 2fr 1fr 2fr 1.5fr; padding: 0 1rem; margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary-color); }
+        .result-item-header > div:not(:first-child) { text-align: right; }
+        .result-item { display: grid; grid-template-columns: 3fr 2fr 1fr 2fr 1.5fr; align-items: center; padding: 1rem; border-left: 6px solid var(--card-border-color); margin-bottom: 1rem; }
+        .result-item.win-animation { animation: win-glow 1s ease-out; }
+        @keyframes win-glow { from { box-shadow: 0 0 0 0 var(--win-glow-color); } to { box-shadow: 0 0 25px 12px transparent; } }
+        .result-info .rank { font-family: 'Roboto', sans-serif; font-size: 1.2rem; font-weight: 700; }
+        .result-info .prize { font-size: 1rem; color: var(--text-secondary-color); }
+        .result-info .numbers { font-size: 0.8rem; color: var(--text-secondary-color); margin-top: 0.5rem; word-break: break-all; }
+        .result-stat { text-align: right; font-size: 1.1rem; font-weight: 500; }
+        .result-stat.latest-win { min-height: 26px; letter-spacing: 1.5px; }
+
+        #rank-1 { border-color: var(--gold-color); }
+        #rank-1-zenngo { border-color: var(--silver-color); }
+        #rank-1-kumichigai { border-color: var(--bronze-color); }
+        #rank-2 { border-color: #e55ea6; }
+        #rank-3 { border-color: #5e89e5; }
+        
+        footer { text-align: center; margin-top: 3rem; padding: 1.5rem; color: var(--text-secondary-color); font-size: 0.9rem; }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 2.2rem; }
+            .card { padding: 1.5rem; }
+            .result-item-header { display: none; }
+            .result-item { grid-template-columns: 1fr 1fr; gap: 1rem; }
+            .result-info { grid-column: 1 / -1; }
+            .result-stat { text-align: left; }
+            .result-stat::before { content: attr(data-label); display: block; font-size: 0.8rem; color: var(--text-secondary-color); font-weight: 400; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <header>
+            <h1>年末ジャンボ宝くじシミュレーター</h1>
+            <p>2024年 第1031回全国自治宝くじ (公式情報準拠)</p>
+        </header>
+        <button id="settings-btn" class="icon-btn" title="設定">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/>
+              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="container">
+        <main>
+            <div class="mode-selector">
+                <button class="mode-tab active" data-mode="countup">カウントアップ方式</button>
+                <button class="mode-tab" data-mode="instant">一発告知方式</button>
+            </div>
+
+            <div id="countup-mode" class="simulation-mode active">
+                <div class="card">
+                    <div class="controls">
+                        <button id="toggle-btn">停止</button>
+                        <div class="speed-control">
+                            <input type="radio" name="speed" value="500" id="speed-slow"> <label for="speed-slow">遅</label>
+                            <input type="radio" name="speed" value="100" id="speed-mid" checked> <label for="speed-mid">中</label>
+                            <input type="radio" name="speed" value="1" id="speed-fast"> <label for="speed-fast">速</label>
+                        </div>
+                        <button id="reset-btn-countup" class="reset">リセット</button>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2 class="card-header">最新の購入くじ番号</h2>
+                    <div class="latest-ticket-display">
+                        <span id="latest-ticket" class="ticket-number font-mono">---組-------番</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="instant-mode" class="simulation-mode">
+                <div class="card">
+                    <div class="controls">
+                        <input type="number" id="ticket-amount-input" class="ticket-input font-mono" placeholder="購入枚数を入力" min="1">
+                        <button id="start-instant-sim">抽選開始</button>
+                        <div class="loader hidden" id="loader-spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-header">シミュレーション結果</h2>
+                <div class="summary-grid">
+                    <div class="summary-item"><h3>購入金額</h3><p id="total-cost">0 円</p></div>
+                    <div class="summary-item"><h3>当選金額</h3><p id="total-win">0 円</p></div>
+                    <div class="summary-item"><h3>収支</h3><p id="total-balance">0 円</p></div>
+                    <div class="summary-item"><h3>購入枚数</h3><p id="total-tickets">- 枚</p></div>
+                    <div class="summary-item"><h3>当選枚数</h3><p id="total-wins-count">- 枚</p></div>
+                    <div class="summary-item"><h3>回収率</h3><p id="recovery-rate">- %</p></div>
+                    <div class="summary-item"><h3>当選率</h3><p id="win-rate">- %</p></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-header">当選詳細</h2>
+                <div class="result-item-header">
+                    <div>等級／当籤金額</div>
+                    <div>最新の当せんくじ</div>
+                    <div>当せん枚数</div>
+                    <div>当せん金額</div>
+                    <div>当せん率</div>
+                </div>
+                <div class="results-grid"></div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>このシミュレーターは、指定された当選番号に基づいています。実際の当選を保証するものではありません。</p>
+        </footer>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>設定</h2>
+                <button id="modal-close-btn" class="icon-btn modal-close-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <h3>当選確率の変更</h3>
+                    <div id="probability-settings" class="probability-grid"></div>
+                    <p class="cheat-notice">この設定は宝くじシミュレーターの概念を壊す可能性があります。自己責任でご利用ください。</p>
+                </div>
+                <div class="setting-group">
+                    <h3>モード間の結果引き継ぎ</h3>
+                    <div class="toggle-setting">
+                        <p>モードを切り替えても結果を維持する</p>
+                        <label class="switch">
+                            <input type="checkbox" id="persist-results-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer controls">
+                <button id="reset-settings-btn" class="reset">設定をリセット</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const getEl = (id) => document.getElementById(id);
+            const query = (sel) => document.querySelector(sel);
+            const queryAll = (sel) => document.querySelectorAll(sel);
+            
+            // --- DOM要素 ---
+            const modeTabs = queryAll('.mode-tab');
+            const toggleBtn = getEl('toggle-btn');
+            const resetBtnUp = getEl('reset-btn-countup');
+            const speedRadios = queryAll('input[name="speed"]');
+            const latestTicketEl = getEl('latest-ticket');
+            const ticketAmountInput = getEl('ticket-amount-input');
+            const startInstantBtn = getEl('start-instant-sim');
+            const loader = getEl('loader-spinner');
+            const totalCostEl = getEl('total-cost');
+            const totalWinEl = getEl('total-win');
+            const totalBalanceEl = getEl('total-balance');
+            const totalTicketsEl = getEl('total-tickets');
+            const totalWinsCountEl = getEl('total-wins-count');
+            const recoveryRateEl = getEl('recovery-rate');
+            const winRateEl = getEl('win-rate');
+            const resultsGrid = query('.results-grid');
+            const settingsBtn = getEl('settings-btn');
+            const settingsModal = getEl('settings-modal');
+            const modalCloseBtn = getEl('modal-close-btn');
+            const probabilitySettingsContainer = getEl('probability-settings');
+            const persistResultsToggle = getEl('persist-results-toggle');
+            const resetSettingsBtn = getEl('reset-settings-btn');
+
+            // --- 状態管理 ---
+            let simState = {
+                isRunning: false,
+                speed: 100,
+                intervalId: null,
+                currentMode: 'countup',
+                persistResults: false,
+            };
+            
+            // --- 当選データと確率 (★★★ 修正箇所 ★★★ 全角数字を半角に変更) ---
+            const PRIZE_DEFINITIONS = {
+                'rank-1': { rank: '1等', prize: 700000000, prob: 20000000 },
+                'rank-1-zenngo': { rank: '1等の前後賞', prize: 150000000, prob: 10000000 },
+                'rank-1-kumichigai': { rank: '1等の組違い', prize: 100000, prob: 100502.5, approx: true},
+                'rank-2': { rank: '2等', prize: 10000000, prob: 2500000 },
+                'rank-3': { rank: '3等', prize: 1000000, prob: 50000 },
+                'rank-4': { rank: '4等', prize: 50000, prob: 10000 },
+                'rank-5': { rank: '5等', prize: 10000, prob: 1000 },
+                'rank-6': { rank: '6等', prize: 3000, prob: 100 },
+                'rank-7': { rank: '7等', prize: 300, prob: 10 },
+            };
+            let customProbabilities = {};
+
+            // --- 結果データ管理 ---
+            let resultsData;
+
+            function initializeResults(forceNew = false) {
+                if (!simState.persistResults || forceNew || !resultsData) {
+                    resultsData = {
+                        totalCost: 0, totalWin: 0, totalTickets: 0, totalWinsCount: 0,
+                        prizes: {}
+                    };
+                    Object.keys(PRIZE_DEFINITIONS).forEach(id => {
+                        resultsData.prizes[id] = { count: 0, amount: 0, latestWin: null };
+                    });
+                }
+                updateAllDisplays();
+                latestTicketEl.textContent = '---組-------番';
+            }
+
+            function initializeUI() {
+                resultsGrid.innerHTML = '';
+                probabilitySettingsContainer.innerHTML = '';
+                Object.entries(PRIZE_DEFINITIONS).forEach(([id, def]) => {
+                    const el = document.createElement('div');
+                    el.className = 'card result-item';
+                    el.id = id;
+                    el.innerHTML = `
+                        <div class="result-info">
+                            <div class="rank">${def.rank}</div>
+                            <div class="prize">${def.prize.toLocaleString()}円</div>
+                        </div>
+                        <div class="result-stat latest-win font-mono" data-label="最新の当せんくじ" data-stat="latest">-</div>
+                        <div class="result-stat" data-label="当せん枚数" data-stat="count">0</div>
+                        <div class="result-stat" data-label="当せん金額" data-stat="amount">0円</div>
+                        <div class="result-stat" data-label="当せん率" data-stat="rate">0.0000%</div>`;
+                    resultsGrid.appendChild(el);
+
+                    const probEl = document.createElement('div');
+                    probEl.className = 'prob-item';
+                    probEl.innerHTML = `
+                        <label for="prob-${id}">${def.rank}</label>
+                        <div class="prob-input-wrapper">
+                            <span>1 / </span>
+                            <input type="number" id="prob-${id}" data-id="${id}" value="${def.prob}" min="1">
+                        </div>`;
+                    probabilitySettingsContainer.appendChild(probEl);
+                });
+            }
+
+            // --- 表示更新処理 ---
+            function updateAllDisplays() {
+                totalCostEl.textContent = `${resultsData.totalCost.toLocaleString()} 円`;
+                totalWinEl.textContent = `${resultsData.totalWin.toLocaleString()} 円`;
+                const balance = resultsData.totalWin - resultsData.totalCost;
+                totalBalanceEl.textContent = `${balance.toLocaleString()} 円`;
+                totalBalanceEl.className = balance >= 0 ? 'balance-plus' : 'balance-minus';
+                totalTicketsEl.textContent = `${resultsData.totalTickets.toLocaleString()} 枚`;
+                totalWinsCountEl.textContent = `${resultsData.totalWinsCount.toLocaleString()} 枚`;
+                const recoveryRate = resultsData.totalCost > 0 ? (resultsData.totalWin / resultsData.totalCost * 100).toFixed(2) : '0.00';
+                const winRate = resultsData.totalTickets > 0 ? (resultsData.totalWinsCount / resultsData.totalTickets * 100).toFixed(4) : '0.0000';
+                recoveryRateEl.textContent = `${recoveryRate} %`;
+                winRateEl.textContent = `${winRate} %`;
+
+                Object.keys(PRIZE_DEFINITIONS).forEach(id => {
+                    const pData = resultsData.prizes[id];
+                    const pEl = getEl(id);
+                    if (pEl) {
+                        pEl.querySelector('[data-stat="count"]').textContent = pData.count.toLocaleString();
+                        pEl.querySelector('[data-stat="amount"]').textContent = pData.amount.toLocaleString() + '円';
+                        pEl.querySelector('[data-stat="latest"]').textContent = pData.latestWin ? `${String(pData.latestWin.kumi).padStart(3, '0')}組 ${String(pData.latestWin.bango).padStart(6, '0')}番` : '-';
+                        const rate = resultsData.totalTickets > 0 ? (pData.count / resultsData.totalTickets * 100).toFixed(6) : '0.000000';
+                        pEl.querySelector('[data-stat="rate"]').textContent = `${rate}%`;
+                    }
+                });
+            }
+
+            // --- 抽選ロジック (確率ベースに変更) ---
+            function checkWin(kumi, bango) {
+                Object.entries(PRIZE_DEFINITIONS).forEach(([id, def]) => {
+                    const prob = customProbabilities[id] || def.prob;
+                    if (Math.random() < 1 / prob) {
+                        recordWin(id, def.prize, kumi, bango);
+                    }
+                });
+            }
+
+            function recordWin(prizeId, prizeAmount, kumi, bango) {
+                const pData = resultsData.prizes[prizeId];
+                pData.count++;
+                pData.amount += prizeAmount;
+                pData.latestWin = { kumi, bango };
+                resultsData.totalWin += prizeAmount;
+                resultsData.totalWinsCount++;
+                const pEl = getEl(prizeId);
+                if(pEl) {
+                    pEl.classList.remove('win-animation');
+                    void pEl.offsetWidth; 
+                    pEl.classList.add('win-animation');
+                }
+            }
+            
+            // --- カウントアップ方式の処理 ---
+            function runCountUpStep() {
+                if (!simState.isRunning) return;
+                const kumi = Math.floor(Math.random() * 200) + 1;
+                const bango = Math.floor(Math.random() * 100000) + 100000;
+                resultsData.totalTickets++;
+                resultsData.totalCost += 300;
+                latestTicketEl.textContent = `${String(kumi).padStart(3, '0')}組 ${String(bango).padStart(6, '0')}番`;
+                checkWin(kumi, bango);
+                updateAllDisplays();
+            }
+
+            function startCountUp() {
+                if (simState.intervalId) clearInterval(simState.intervalId);
+                simState.isRunning = true;
+                simState.intervalId = setInterval(runCountUpStep, simState.speed);
+                toggleBtn.textContent = '停止';
+            }
+
+            function stopCountUp() {
+                clearInterval(simState.intervalId);
+                simState.intervalId = null;
+                simState.isRunning = false;
+                toggleBtn.textContent = '再開';
+            }
+            
+            // --- 一発告知方式の処理 ---
+            function runInstantSim() {
+                const amount = parseInt(ticketAmountInput.value, 10);
+                if (!amount || amount <= 0) { alert('正しい購入枚数を入力してください。'); return; }
+
+                if(!simState.persistResults) {
+                    initializeResults(true);
+                }
+                startInstantBtn.disabled = true;
+                loader.classList.remove('hidden');
+
+                setTimeout(() => { 
+                    for (let i = 0; i < amount; i++) {
+                        const kumi = Math.floor(Math.random() * 200) + 1;
+                        const bango = Math.floor(Math.random() * 100000) + 100000;
+                        checkWin(kumi, bango);
+                    }
+                    resultsData.totalTickets += amount;
+                    resultsData.totalCost += amount * 300;
+                    updateAllDisplays();
+                    startInstantBtn.disabled = false;
+                    loader.classList.add('hidden');
+                }, 50);
+            }
+            
+            // --- 設定リセット処理 ---
+            function resetSettings() {
+                customProbabilities = {};
+                queryAll('#probability-settings input').forEach(input => {
+                    const id = input.dataset.id;
+                    input.value = PRIZE_DEFINITIONS[id].prob;
+                });
+                
+                persistResultsToggle.checked = false;
+                simState.persistResults = false;
+            }
+
+            // --- イベントリスナー ---
+            modeTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    stopCountUp();
+                    const newMode = tab.dataset.mode;
+                    if (newMode === simState.currentMode) return;
+                    
+                    simState.currentMode = newMode;
+                    modeTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    queryAll('.simulation-mode').forEach(m => m.classList.remove('active'));
+                    getEl(`${newMode}-mode`).classList.add('active');
+                    
+                    if (!simState.persistResults) {
+                        initializeResults(true);
+                    }
+                    if(newMode === 'countup') startCountUp();
+                });
+            });
+
+            toggleBtn.addEventListener('click', () => simState.isRunning ? stopCountUp() : startCountUp());
+            resetBtnUp.addEventListener('click', () => { stopCountUp(); initializeResults(true); startCountUp(); });
+            speedRadios.forEach(radio => radio.addEventListener('change', (e) => { simState.speed = parseInt(e.target.value, 10); if (simState.isRunning) startCountUp(); }));
+            startInstantBtn.addEventListener('click', runInstantSim);
+
+            // 設定モーダル
+            settingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
+            modalCloseBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
+            settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.remove('active'); });
+            
+            probabilitySettingsContainer.addEventListener('change', (e) => {
+                if(e.target.matches('input[type="number"]')) {
+                    const id = e.target.dataset.id;
+                    const value = parseFloat(e.target.value);
+                    if(value > 0) {
+                        customProbabilities[id] = value;
+                    } else {
+                        delete customProbabilities[id];
+                        e.target.value = PRIZE_DEFINITIONS[id].prob;
+                    }
+                }
+            });
+
+            persistResultsToggle.addEventListener('change', (e) => {
+                simState.persistResults = e.target.checked;
+            });
+            
+            resetSettingsBtn.addEventListener('click', resetSettings);
+
+            // --- テーマ切り替え ---
+            const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
+            function applyTheme(isDark) { document.documentElement.classList.toggle('light', !isDark); }
+            darkModeMatcher.addEventListener('change', e => applyTheme(e.matches));
+            applyTheme(darkModeMatcher.matches);
+
+            // --- 初期実行 ---
+            initializeUI();
+            initializeResults(true);
+            startCountUp();
+        });
+    </script>
+</body>
+</html>
