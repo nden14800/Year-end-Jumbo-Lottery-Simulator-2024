@@ -259,7 +259,8 @@
         </main>
         
         <footer>
-            <p>このシミュレーターは、指定された当選番号に基づいています。実際の当選を保証するものではありません。</p>
+            <!-- ★変更 -->
+            <p>このシミュレーターは、実際の当選番号に基づいています。実際の当選を保証するものではありません。</p>
         </footer>
     </div>
 
@@ -274,6 +275,13 @@
                 </button>
             </div>
             <div class="modal-body">
+                <div class="setting-group">
+                    <h3>カウントアップ方式 設定</h3>
+                    <div class="toggle-setting">
+                        <label for="step-amount-input">1ステップあたりの購入枚数</label>
+                        <input type="number" id="step-amount-input" class="ticket-input font-mono" value="1" min="1" style="width: 120px; font-size: 1rem;">
+                    </div>
+                </div>
                 <div class="setting-group">
                     <h3>当選確率の変更</h3>
                     <div id="probability-settings" class="probability-grid"></div>
@@ -326,6 +334,7 @@
             const probabilitySettingsContainer = getEl('probability-settings');
             const persistResultsToggle = getEl('persist-results-toggle');
             const resetSettingsBtn = getEl('reset-settings-btn');
+            const stepAmountInput = getEl('step-amount-input');
 
             // --- 状態管理 ---
             let simState = {
@@ -334,9 +343,10 @@
                 intervalId: null,
                 currentMode: 'countup',
                 persistResults: false,
+                stepAmount: 1, 
             };
             
-            // --- 当選データと確率 (★★★ 修正箇所 ★★★ 全角数字を半角に変更) ---
+            // --- 当選データと確率 ---
             const PRIZE_DEFINITIONS = {
                 'rank-1': { rank: '1等', prize: 700000000, prob: 20000000 },
                 'rank-1-zenngo': { rank: '1等の前後賞', prize: 150000000, prob: 10000000 },
@@ -452,12 +462,23 @@
             // --- カウントアップ方式の処理 ---
             function runCountUpStep() {
                 if (!simState.isRunning) return;
-                const kumi = Math.floor(Math.random() * 200) + 1;
-                const bango = Math.floor(Math.random() * 100000) + 100000;
-                resultsData.totalTickets++;
-                resultsData.totalCost += 300;
-                latestTicketEl.textContent = `${String(kumi).padStart(3, '0')}組 ${String(bango).padStart(6, '0')}番`;
-                checkWin(kumi, bango);
+
+                const amount = simState.stepAmount;
+                let kumi, bango;
+
+                for (let i = 0; i < amount; i++) {
+                    kumi = Math.floor(Math.random() * 200) + 1;
+                    bango = Math.floor(Math.random() * 100000) + 100000;
+                    checkWin(kumi, bango);
+                }
+
+                resultsData.totalTickets += amount;
+                resultsData.totalCost += amount * 300;
+                
+                if (kumi && bango) {
+                    latestTicketEl.textContent = `${String(kumi).padStart(3, '0')}組 ${String(bango).padStart(6, '0')}番`;
+                }
+
                 updateAllDisplays();
             }
 
@@ -508,6 +529,9 @@
                     input.value = PRIZE_DEFINITIONS[id].prob;
                 });
                 
+                stepAmountInput.value = 1;
+                simState.stepAmount = 1;
+
                 persistResultsToggle.checked = false;
                 simState.persistResults = false;
             }
@@ -553,6 +577,16 @@
                         delete customProbabilities[id];
                         e.target.value = PRIZE_DEFINITIONS[id].prob;
                     }
+                }
+            });
+            
+            stepAmountInput.addEventListener('change', (e) => {
+                const value = parseInt(e.target.value, 10);
+                if (value > 0) {
+                    simState.stepAmount = value;
+                } else {
+                    simState.stepAmount = 1;
+                    e.target.value = 1;
                 }
             });
 
