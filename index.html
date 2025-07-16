@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.7 (Final)</title>
+    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.9 (Final)</title>
     <meta name="description" content="2024年の実際の当籤番号を元に宝くじの当選をシミュレーション。あなたの運を試してみましょう。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         /* --- 基本設定と変数 --- */
@@ -26,6 +26,7 @@
             --gold-color: #ffd700;
             --silver-color: #c0c0c0;
             --bronze-color: #cd7f32;
+            --win-glow-color: rgba(255, 223, 0, 0.7);
             --rank2-color: #e55ea6;
             --rank3-color: #5e89e5;
         }
@@ -52,50 +53,78 @@
             line-height: 1.6;
             background-attachment: fixed;
         }
+        body.screen-shake { animation: screen-shake 0.8s cubic-bezier(.36,.07,.19,.97) both; }
 
-        button {
-            font-family: 'Roboto', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-        }
 
+        button { font-family: 'Roboto', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; }
         .font-roboto { font-family: 'Roboto', sans-serif; }
         .font-mono { font-family: 'Roboto Mono', monospace; }
 
         /* --- レイアウトとヘッダー --- */
-        .header-container { max-width: 950px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; }
         .container { max-width: 950px; margin: 1rem auto; padding: 0 1rem; }
-        header { text-align: center; margin-bottom: 2rem; color: #fff; flex-grow: 1; }
+        header { text-align: center; margin-bottom: 2rem; }
         header h1 { font-size: 2.8rem; font-weight: 700; text-shadow: 0 2px 8px var(--shadow-color); }
         header p { font-size: 1.2rem; opacity: 0.9; }
 
-        /* --- アイコンボタン共通 --- */
+        /* --- カードスタイル --- */
+        .card { background: var(--card-bg); border-radius: 16px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 8px 32px 0 var(--shadow-color); border: 1px solid var(--card-border-color); }
+        .card-header { font-size: 1.4rem; font-weight: 500; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--card-border-color); }
+        
+        /* --- 当選演出 --- */
+        .result-item.win-animation { animation: win-glow 1s ease-out; }
+        .result-item.win-glow-special { animation: win-glow-special 2.5s ease-in-out 2; }
+
+        #special-win-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; justify-content: center; align-items: center;
+            background: radial-gradient(circle, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%);
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+        #special-win-text {
+            font-size: clamp(2rem, 10vw, 7rem);
+            font-weight: 900;
+            color: var(--gold-color);
+            text-shadow: 0 0 10px var(--gold-color), 0 0 20px var(--gold-color), 0 0 40px #ff8c00, 0 0 60px #ff8c00;
+            transform-origin: center;
+        }
+        #special-win-text.text-shake { animation: text-shake 1s cubic-bezier(.36,.07,.19,.97) infinite; }
+        
+        @keyframes win-glow { from { box-shadow: 0 0 0 0 var(--win-glow-color); } to { box-shadow: 0 0 25px 12px transparent; } }
+        @keyframes win-glow-special {
+            0%, 100% { box-shadow: 0 0 10px 0px var(--gold-color), inset 0 0 5px 0px var(--gold-color); }
+            50% { box-shadow: 0 0 40px 15px var(--gold-color), inset 0 0 10px 5px var(--gold-color); }
+        }
+        @keyframes screen-shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        @keyframes text-shake {
+            0% { transform: scale(1); }
+            10%, 20% { transform: scale(0.9) rotate(-3deg); }
+            30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
+            40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        /* --- その他 (省略。前回のコードと同じ) --- */
+        .header-container { max-width: 950px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center; }
         .icon-btn { background: none; border: none; cursor: pointer; padding: 0.5rem; line-height: 0; }
         .icon-btn svg { width: 28px; height: 28px; fill: var(--text-color); transition: all 0.3s; }
         #settings-btn svg { fill: #fff; }
         #settings-btn:hover svg { transform: rotate(45deg); }
-        
-        /* --- モーダル (設定画面) --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1000;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1000; }
         .modal-overlay.active { opacity: 1; visibility: visible; }
-        .modal-content {
-            background: var(--bg-color-end); border: 1px solid var(--card-border-color);
-            padding: 2rem; border-radius: 16px; width: 90%; max-width: 600px;
-            max-height: 90vh; overflow-y: auto;
-            transform: scale(0.9); transition: transform 0.3s;
-        }
+        .modal-content { background: var(--bg-color-end); border: 1px solid var(--card-border-color); padding: 2rem; border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; transform: scale(0.9); transition: transform 0.3s; }
         .modal-overlay.active .modal-content { transform: scale(1); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
         .modal-header h2 { font-size: 1.5rem; }
         .modal-close-btn svg { width: 24px; height: 24px; }
         .modal-close-btn:hover svg { opacity: 0.7; }
-
         .setting-group { margin-bottom: 2rem; }
         .setting-group h3 { font-size: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--card-border-color); padding-bottom: 0.5rem;}
-        
         .toggle-setting { display: flex; justify-content: space-between; align-items: center; }
         .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -103,39 +132,26 @@
         .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%;}
         input:checked + .slider { background-color: var(--primary-color); }
         input:checked + .slider:before { transform: translateX(22px); }
-
         .modal-footer { margin-top: 2rem; text-align: right; }
-
-        /* --- カードスタイル --- */
-        .card { background: var(--card-bg); border-radius: 16px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; box-shadow: 0 8px 32px 0 var(--shadow-color); border: 1px solid var(--card-border-color); }
-        .card-header { font-size: 1.4rem; font-weight: 500; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--card-border-color); }
-        
-        /* --- モードセレクター --- */
         .mode-selector { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
         .mode-tab { flex-grow: 1; padding: 0.8rem 1rem; border: none; background: var(--card-bg); color: var(--text-secondary-color); border-radius: 10px 10px 0 0; cursor: pointer; transition: all 0.3s; font-size: 1rem; font-weight: 500; }
         .mode-tab.active { background: var(--primary-color); color: #fff; }
         .simulation-mode { display: none; }
         .simulation-mode.active { display: block; }
-
-        /* --- コントロール全般 --- */
         .controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 1.5rem; }
         .controls button { background-color: var(--primary-color); color: white; border: none; padding: 0.8rem 1.8rem; border-radius: 10px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px -5px rgba(0,0,0,0.4); }
         .controls button:hover:not(:disabled) { background-color: var(--primary-hover-color); transform: translateY(-3px); box-shadow: 0 6px 20px -5px rgba(0,0,0,0.5); }
         .controls button:disabled { background-color: #6c757d; cursor: not-allowed; opacity: 0.7; transform: none; box-shadow: none; }
         .controls button.reset { background-color: #6c757d; }
         .controls button.reset:hover:not(:disabled) { background-color: #5a6268; }
-
         .speed-control { display: flex; align-items: center; gap: 0.75rem; }
         .speed-control input[type="radio"] { display: none; }
         .speed-control label { padding: 0.5rem 1rem; border: 1px solid var(--card-border-color); border-radius: 8px; cursor: pointer; transition: all 0.2s; font-weight: 500; }
         .speed-control input[type="radio"]:checked + label { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
         .ticket-input { background-color: rgba(0,0,0,0.2); border: 1px solid var(--card-border-color); color: var(--text-color); border-radius: 8px; padding: 0.8rem 1rem; font-size: 1.2rem; width: 200px; text-align: center; }
         .ticket-input::placeholder { color: var(--text-secondary-color); }
-
         .loader { width: 24px; height: 24px; border: 3px solid transparent; border-top-color: var(--loader-color); border-radius: 50%; animation: spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite; }
         .loader.hidden { display: none; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
         .latest-ticket-display { text-align: center; font-size: 1.8rem; font-weight: 700; }
         .latest-ticket-display .ticket-number { display: inline-block; background: rgba(0,0,0,0.2); padding: 0.75rem 1.5rem; border-radius: 10px; color: #fff; min-width: 320px; }
         .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1.5rem; text-align: center; }
@@ -143,64 +159,29 @@
         .summary-item p { font-size: 1.8rem; font-weight: 700; }
         .summary-item p.balance-plus { color: #28a745; }
         .summary-item p.balance-minus { color: #dc3545; }
-
         .result-item-header { display: grid; grid-template-columns: 3fr 2fr 1fr 2fr 1.5fr; padding: 0 1rem; margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary-color); }
         .result-item-header > div:not(:first-child) { text-align: right; }
         .result-item { display: grid; grid-template-columns: 3fr 2fr 1fr 2fr 1.5fr; align-items: center; padding: 1rem; border-left: 6px solid var(--card-border-color); margin-bottom: 1rem; }
-        .result-item.win-animation { animation: win-glow 1s ease-out; }
-        @keyframes win-glow { from { box-shadow: 0 0 0 0 var(--win-glow-color); } to { box-shadow: 0 0 25px 12px transparent; } }
         .result-info .rank { font-family: 'Roboto', sans-serif; font-size: 1.2rem; font-weight: 700; }
         .result-info .prize { font-size: 1rem; color: var(--text-secondary-color); }
         .result-info .numbers { font-size: 0.9rem; color: var(--text-secondary-color); margin-top: 0.5rem; word-break: break-all; font-family: 'Roboto Mono', monospace;}
         .result-stat { text-align: right; font-size: 1.1rem; font-weight: 500; }
         .result-stat.latest-win { min-height: 26px; letter-spacing: 1.5px; }
-
         #rank-1 { border-color: var(--gold-color); }
         #rank-1-zenngo { border-color: var(--silver-color); }
         #rank-1-kumichigai { border-color: var(--bronze-color); }
         #rank-2 { border-color: var(--rank2-color); }
         #rank-3 { border-color: var(--rank3-color); }
-        
-        /* --- 当選ログ --- */
-        #log-card { display: none; /* JSで表示を切り替え */ }
+        #log-card { display: none; }
         .log-filter-controls { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem; }
-        .log-filter-btn {
-            background-color: #6c757d;
-            color: white;
-            border: none;
-            padding: 0.4rem 0.9rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .log-filter-btn:hover:not(.active) {
-            background-color: #5a6268;
-            transform: translateY(-1px);
-        }
-        .log-filter-btn.active {
-            background-color: var(--primary-color);
-            box-shadow: 0 4px 12px -4px rgba(61, 157, 255, 0.7);
-            transform: translateY(-2px);
-        }
-
+        .log-filter-btn { background-color: #6c757d; color: white; border: none; padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease-in-out; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .log-filter-btn:hover:not(.active) { background-color: #5a6268; transform: translateY(-1px); }
+        .log-filter-btn.active { background-color: var(--primary-color); box-shadow: 0 4px 12px -4px rgba(61, 157, 255, 0.7); transform: translateY(-2px); }
         #log-content { max-height: 300px; overflow-y: auto; padding-right: 1rem; }
-        #log-content p {
-            font-family: 'Roboto Mono', monospace;
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--card-border-color);
-            word-break: break-all;
-            display: flex; gap: 1ch;
-            align-items: baseline;
-        }
+        #log-content p { font-family: 'Roboto Mono', monospace; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--card-border-color); word-break: break-all; display: flex; gap: 1ch; align-items: baseline; }
         #log-content p:last-child { border-bottom: none; }
         .log-time { color: var(--text-secondary-color); flex-shrink: 0; }
-
         footer { text-align: center; margin-top: 3rem; padding: 1.5rem; color: var(--text-secondary-color); font-size: 0.9rem; }
-
         @media (max-width: 768px) {
             header h1 { font-size: 2.2rem; }
             .card { padding: 1.5rem; }
@@ -220,10 +201,7 @@
             <p>2024年 第1031回全国自治宝くじ (公式当籤番号準拠)</p>
         </header>
         <button id="settings-btn" class="icon-btn" title="設定">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/>
-              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/>
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/></svg>
         </button>
     </div>
 
@@ -279,13 +257,6 @@
 
             <div class="card">
                 <h2 class="card-header">当選詳細</h2>
-                <div class="result-item-header">
-                    <div>等級／当籤金額／当籤番号</div>
-                    <div>最新の当せんくじ</div>
-                    <div>当せん枚数</div>
-                    <div>当せん金額</div>
-                    <div>当せん率</div>
-                </div>
                 <div class="results-grid"></div>
             </div>
 
@@ -306,9 +277,7 @@
             <div class="modal-header">
                 <h2>設定</h2>
                 <button id="modal-close-btn" class="icon-btn modal-close-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/></svg>
                 </button>
             </div>
             <div class="modal-body">
@@ -322,6 +291,16 @@
                  <div class="setting-group">
                     <h3>当選確率の変更 (現在無効)</h3>
                     <p style="color: var(--text-secondary-color);">このシミュレーターは実際の当籤番号に基づいているため、確率設定は無効化されています。</p>
+                </div>
+                <div class="setting-group">
+                    <h3>演出設定</h3>
+                    <div class="toggle-setting">
+                        <p>高額当選時の特別演出</p>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-special-effects" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="setting-group">
                     <h3>ログ表示設定</h3>
@@ -348,6 +327,10 @@
                  <button id="reset-settings-btn" class="reset">設定をリセット</button>
             </div>
         </div>
+    </div>
+    
+    <div id="special-win-overlay">
+        <h1 id="special-win-text"></h1>
     </div>
 
     <script>
@@ -384,6 +367,9 @@
             const logContent = getEl('log-content');
             const logFilterControls = getEl('log-filter-controls');
             const toggleLogDisplay = getEl('toggle-log-display');
+            const toggleSpecialEffects = getEl('toggle-special-effects');
+            const specialWinOverlay = getEl('special-win-overlay');
+            const specialWinText = getEl('special-win-text');
 
             // --- 状態管理 ---
             let simState = {
@@ -395,6 +381,7 @@
                 stepAmount: 1, 
                 currentLogFilter: 'all',
                 showLog: true,
+                specialEffectsEnabled: true,
             };
             
             const MAX_LOG_COUNT = 100;
@@ -420,14 +407,13 @@
                     { kumi: 60, bango: 122015 }, { kumi: 46, bango: 116185 },
                     { kumi: 60, bango: 110493 }, { kumi: 84, bango: 120749 }
                 ],
-                'rank-3': { bango: [103265, 164169] }, // ★ BUG FIX: Corrected to full 6-digit numbers
+                'rank-3': { bango: [103265, 164169] },
                 'rank-4': { bango: 6135 },
                 'rank-5': { bango: 896 },
                 'rank-6': { bango: 64 },
                 'rank-7': { bango: 6 },
             };
 
-            // --- 結果データ管理 ---
             let resultsData;
 
             function initializeResults(forceNew = false) {
@@ -447,13 +433,11 @@
             }
 
             function initializeUI() {
-                // 当選詳細のUIを生成
                 resultsGrid.innerHTML = '';
                 Object.entries(PRIZE_DEFINITIONS).forEach(([id, def]) => {
                     const el = document.createElement('div');
                     el.className = 'card result-item';
                     el.id = id;
-                    
                     let numbersHtml = '';
                     if (id === 'rank-1') {
                         const { kumi, bango } = WINNING_NUMBERS[id];
@@ -465,7 +449,6 @@
                     } else if (id === 'rank-2') {
                          numbersHtml = WINNING_NUMBERS[id].map(n => `${String(n.kumi).padStart(3,'0')}組 ${String(n.bango).padStart(6,'0')}番`).join('<br>');
                     } else if (id === 'rank-3') {
-                        // ★ BUG FIX: Display corrected 6-digit numbers
                         const numbers = WINNING_NUMBERS[id].bango.map(n => `${n}番`);
                         numbersHtml = `各組共通 ${numbers.join(', ')}`;
                     } else if (id === 'rank-4') {
@@ -477,28 +460,16 @@
                     } else if (id === 'rank-7') {
                         numbersHtml = `下1ケタ: ${WINNING_NUMBERS[id].bango}`;
                     }
-
-                    el.innerHTML = `
-                        <div class="result-info">
-                            <div class="rank">${def.rank}</div>
-                            <div class="prize">${def.prize.toLocaleString()}円</div>
-                            <div class="numbers">${numbersHtml}</div>
-                        </div>
-                        <div class="result-stat latest-win font-mono" data-label="最新の当せんくじ" data-stat="latest">-</div>
-                        <div class="result-stat" data-label="当せん枚数" data-stat="count">0</div>
-                        <div class="result-stat" data-label="当せん金額" data-stat="amount">0円</div>
-                        <div class="result-stat" data-label="当せん率" data-stat="rate">0.000%</div>`;
+                    el.innerHTML = `<div class="result-info"><div class="rank">${def.rank}</div><div class="prize">${def.prize.toLocaleString()}円</div><div class="numbers">${numbersHtml}</div></div><div class="result-stat latest-win font-mono" data-label="最新の当せんくじ" data-stat="latest">-</div><div class="result-stat" data-label="当せん枚数" data-stat="count">0</div><div class="result-stat" data-label="当せん金額" data-stat="amount">0円</div><div class="result-stat" data-label="当せん率" data-stat="rate">0.000%</div>`;
                     resultsGrid.appendChild(el);
                 });
 
-                // ログフィルターボタンを生成
                 logFilterControls.innerHTML = '';
                 const allBtn = document.createElement('button');
                 allBtn.className = 'log-filter-btn active';
                 allBtn.textContent = 'すべて';
                 allBtn.dataset.rank = 'all';
                 logFilterControls.appendChild(allBtn);
-
                 Object.entries(PRIZE_DEFINITIONS).forEach(([id, def]) => {
                     const btn = document.createElement('button');
                     btn.className = 'log-filter-btn';
@@ -508,7 +479,6 @@
                 });
             }
 
-            // --- 表示更新処理 ---
             function updateAllDisplays() {
                 totalCostEl.textContent = `${resultsData.totalCost.toLocaleString()} 円`;
                 totalWinEl.textContent = `${resultsData.totalWin.toLocaleString()} 円`;
@@ -521,7 +491,6 @@
                 const winRate = resultsData.totalTickets > 0 ? (resultsData.totalWinsCount / resultsData.totalTickets * 100).toFixed(4) : '0.0000';
                 recoveryRateEl.textContent = `${recoveryRate} %`;
                 winRateEl.textContent = `${winRate} %`;
-
                 Object.keys(PRIZE_DEFINITIONS).forEach(id => {
                     const pData = resultsData.prizes[id];
                     const pEl = getEl(id);
@@ -535,7 +504,6 @@
                 });
             }
             
-            // --- ログ関連処理 ---
             function formatTime(date) {
                 const pad = (n) => String(n).padStart(2, '0');
                 return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
@@ -545,11 +513,7 @@
                 if (resultsData.logEntries.length >= MAX_LOG_COUNT) {
                     resultsData.logEntries.shift(); 
                 }
-                resultsData.logEntries.push({
-                    prizeId: prizeId, kumi: kumi, bango: bango,
-                    ticketCount: resultsData.totalTickets,
-                    timestamp: new Date()
-                });
+                resultsData.logEntries.push({ prizeId, kumi, bango, ticketCount: resultsData.totalTickets, timestamp: new Date() });
                 updateLogDisplay();
             }
 
@@ -563,17 +527,9 @@
             }
             
             function updateLogDisplay() {
-                if (!simState.showLog) {
-                    logCard.style.display = 'none';
-                    return;
-                }
-                
+                if (!simState.showLog) { logCard.style.display = 'none'; return; }
                 logCard.style.display = 'block';
-
-                const filteredLogs = simState.currentLogFilter === 'all'
-                    ? resultsData.logEntries
-                    : resultsData.logEntries.filter(log => log.prizeId === simState.currentLogFilter);
-
+                const filteredLogs = simState.currentLogFilter === 'all' ? resultsData.logEntries : resultsData.logEntries.filter(log => log.prizeId === simState.currentLogFilter);
                 let logHtml = '';
                 if (resultsData.logEntries.length === 0) {
                      logHtml = '<p>まだ当選はありません。</p>';
@@ -587,25 +543,22 @@
                 } else {
                     logHtml = '<p>この等級の当選はまだありません。</p>';
                 }
-                
                 logContent.innerHTML = logHtml;
-                if (filteredLogs.length > 0) {
-                    logContent.scrollTop = logContent.scrollHeight;
-                }
+                if (filteredLogs.length > 0) { logContent.scrollTop = logContent.scrollHeight; }
             }
 
-            // --- 抽選ロジック ---
-            function checkWin(kumi, bango) {
-                if (kumi === WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) { recordWin('rank-1', kumi, bango); return; }
-                if (kumi === WINNING_NUMBERS['rank-1'].kumi && Math.abs(bango - WINNING_NUMBERS['rank-1'].bango) === 1) { recordWin('rank-1-zenngo', kumi, bango); }
-                if (kumi !== WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) { recordWin('rank-1-kumichigai', kumi, bango); }
-                for (const winNum of WINNING_NUMBERS['rank-2']) { if (kumi === winNum.kumi && bango === winNum.bango) { recordWin('rank-2', kumi, bango); break; }}
-                // ★ BUG FIX: Correctly check against the full 6-digit number
-                if (WINNING_NUMBERS['rank-3'].bango.includes(bango)) { recordWin('rank-3', kumi, bango); }
-                if (bango % 10000 === WINNING_NUMBERS['rank-4'].bango) { recordWin('rank-4', kumi, bango); }
-                if (bango % 1000 === WINNING_NUMBERS['rank-5'].bango) { recordWin('rank-5', kumi, bango); }
-                if (bango % 100 === WINNING_NUMBERS['rank-6'].bango) { recordWin('rank-6', kumi, bango); }
-                if (bango % 10 === WINNING_NUMBERS['rank-7'].bango) { recordWin('rank-7', kumi, bango); }
+            function triggerSpecialWinEffect(prizeId) {
+                if (!simState.specialEffectsEnabled) return; 
+                const rankName = PRIZE_DEFINITIONS[prizeId].rank;
+                specialWinText.textContent = `${rankName}が当たりました！！！`;
+                specialWinOverlay.style.display = 'flex';
+                specialWinText.classList.add('text-shake');
+                document.body.classList.add('screen-shake');
+                setTimeout(() => {
+                    specialWinOverlay.style.display = 'none';
+                    specialWinText.classList.remove('text-shake');
+                    document.body.classList.remove('screen-shake');
+                }, 4000);
             }
 
             function recordWin(prizeId, kumi, bango) {
@@ -616,16 +569,36 @@
                 pData.latestWin = { kumi, bango };
                 resultsData.totalWin += prizeAmount;
                 resultsData.totalWinsCount++;
-                logWin(prizeId, kumi, bango); 
+                logWin(prizeId, kumi, bango);
+
                 const pEl = getEl(prizeId);
-                if(pEl) {
-                    pEl.classList.remove('win-animation');
-                    void pEl.offsetWidth; 
+                if (!pEl) return;
+
+                pEl.classList.remove('win-animation', 'win-glow-special');
+                void pEl.offsetWidth;
+
+                const isSpecialWin = ['rank-1', 'rank-1-zenngo', 'rank-1-kumichigai', 'rank-2', 'rank-3'].includes(prizeId);
+
+                if (isSpecialWin && simState.specialEffectsEnabled) {
+                    pEl.classList.add('win-glow-special');
+                    triggerSpecialWinEffect(prizeId);
+                } else {
                     pEl.classList.add('win-animation');
                 }
             }
+
+            function checkWin(kumi, bango) {
+                if (kumi === WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) { recordWin('rank-1', kumi, bango); return; }
+                if (kumi === WINNING_NUMBERS['rank-1'].kumi && Math.abs(bango - WINNING_NUMBERS['rank-1'].bango) === 1) { recordWin('rank-1-zenngo', kumi, bango); }
+                if (kumi !== WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) { recordWin('rank-1-kumichigai', kumi, bango); }
+                for (const winNum of WINNING_NUMBERS['rank-2']) { if (kumi === winNum.kumi && bango === winNum.bango) { recordWin('rank-2', kumi, bango); break; }}
+                if (WINNING_NUMBERS['rank-3'].bango.includes(bango)) { recordWin('rank-3', kumi, bango); }
+                if (bango % 10000 === WINNING_NUMBERS['rank-4'].bango) { recordWin('rank-4', kumi, bango); }
+                if (bango % 1000 === WINNING_NUMBERS['rank-5'].bango) { recordWin('rank-5', kumi, bango); }
+                if (bango % 100 === WINNING_NUMBERS['rank-6'].bango) { recordWin('rank-6', kumi, bango); }
+                if (bango % 10 === WINNING_NUMBERS['rank-7'].bango) { recordWin('rank-7', kumi, bango); }
+            }
             
-            // --- カウントアップ方式の処理 ---
             function runCountUpStep() {
                 if (!simState.isRunning) return;
                 const amount = simState.stepAmount;
@@ -642,12 +615,14 @@
                 }
                 updateAllDisplays();
             }
+
             function startCountUp() {
                 if (simState.intervalId) clearInterval(simState.intervalId);
                 simState.isRunning = true;
                 simState.intervalId = setInterval(runCountUpStep, simState.speed);
                 toggleBtn.textContent = '停止';
             }
+
             function stopCountUp() {
                 clearInterval(simState.intervalId);
                 simState.intervalId = null;
@@ -655,7 +630,6 @@
                 toggleBtn.textContent = '再開';
             }
             
-            // --- 一発告知方式の処理 ---
             function runInstantSim() {
                 const amount = parseInt(ticketAmountInput.value, 10);
                 if (!amount || amount <= 0) { alert('正しい購入枚数を入力してください。'); return; }
@@ -674,11 +648,11 @@
                 }, 50);
             }
             
-            // --- 設定リセット処理 ---
             function resetSettings() {
                 stepAmountInput.value = 1; simState.stepAmount = 1;
                 persistResultsToggle.checked = false; simState.persistResults = false;
                 toggleLogDisplay.checked = true; simState.showLog = true;
+                toggleSpecialEffects.checked = true; simState.specialEffectsEnabled = true;
                 simState.currentLogFilter = 'all';
                 logFilterControls.querySelectorAll('.log-filter-btn').forEach(btn => btn.classList.remove('active'));
                 logFilterControls.querySelector('[data-rank="all"]').classList.add('active');
@@ -715,7 +689,6 @@
             settingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
             modalCloseBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
             settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.remove('active'); });
-            
             stepAmountInput.addEventListener('change', (e) => {
                 const value = parseInt(e.target.value, 10);
                 simState.stepAmount = value > 0 ? value : 1;
@@ -726,6 +699,9 @@
                 simState.showLog = e.target.checked;
                 updateLogDisplay();
             });
+            toggleSpecialEffects.addEventListener('change', (e) => {
+                simState.specialEffectsEnabled = e.target.checked;
+            });
             resetSettingsBtn.addEventListener('click', resetSettings);
 
             const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
@@ -733,7 +709,6 @@
             darkModeMatcher.addEventListener('change', e => applyTheme(e.matches));
             applyTheme(darkModeMatcher.matches);
 
-            // --- 初期実行 ---
             initializeUI();
             initializeResults(true);
             startCountUp();
