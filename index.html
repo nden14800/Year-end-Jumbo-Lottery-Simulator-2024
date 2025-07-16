@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.0 (Final)</title>
+    <title>年末ジャンボ宝くじシミュレーター | モダン版 v4.5 (Final)</title>
     <meta name="description" content="2つのモードと詳細設定で宝くじの当選をシミュレーション。あなたの運を試してみましょう。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -150,18 +150,34 @@
         .summary-item p.balance-plus { color: #28a745; }
         .summary-item p.balance-minus { color: #dc3545; }
 
-        /* ★変更: 当選詳細テーブルのレイアウト */
-        .result-item-header { display: grid; grid-template-columns: 2.5fr 2.5fr 2fr 1fr 2fr 1.5fr; padding: 0 1rem; margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary-color); }
+        .result-item-header { display: grid; grid-template-columns: 3fr 2fr 1fr 2fr 1.5fr; padding: 0 1rem; margin-bottom: 0.5rem; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary-color); }
         .result-item-header > div:not(:first-child) { text-align: right; }
-        .result-item { display: grid; grid-template-columns: 2.5fr 2.5fr 2fr 1fr 2fr 1.5fr; align-items: center; padding: 1rem; border-left: 6px solid var(--card-border-color); margin-bottom: 1rem; }
+        .result-item { display: grid; grid-template-columns: 3fr 2fr 1fr 2fr 1.5fr; align-items: center; padding: 1rem; border-left: 6px solid var(--card-border-color); margin-bottom: 1rem; }
         .result-item.win-animation { animation: win-glow 1s ease-out; }
         @keyframes win-glow { from { box-shadow: 0 0 0 0 var(--win-glow-color); } to { box-shadow: 0 0 25px 12px transparent; } }
         .result-info .rank { font-family: 'Roboto', sans-serif; font-size: 1.2rem; font-weight: 700; }
         .result-info .prize { font-size: 1rem; color: var(--text-secondary-color); }
+        /* ★変更 */
         .result-info .numbers { font-size: 0.8rem; color: var(--text-secondary-color); margin-top: 0.5rem; word-break: break-all; }
         .result-stat { text-align: right; font-size: 1.1rem; font-weight: 500; }
         .result-stat.latest-win { min-height: 26px; letter-spacing: 1.5px; }
-        .result-stat.winning-num { font-size: 1rem; letter-spacing: 1px; }
+
+        /* ★新規追加 */
+        .win-log-container { margin-top: 1.5rem; }
+        .win-log-container h3 { font-size: 1.2rem; margin-bottom: 1rem; }
+        .win-log {
+            font-family: 'Roboto Mono', monospace;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            height: 150px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            border: 1px solid var(--card-border-color);
+        }
+        .win-log p { margin-bottom: 0.5rem; }
+        .win-log p:last-child { margin-bottom: 0; }
+        .win-log .log-highlight { color: var(--gold-color); font-weight: bold; }
 
         #rank-1 { border-color: var(--gold-color); }
         #rank-1-zenngo { border-color: var(--silver-color); }
@@ -169,27 +185,6 @@
         #rank-2 { border-color: #e55ea6; }
         #rank-3 { border-color: #5e89e5; }
         
-        /* ★追加: 当選ログ */
-        .win-log-container {
-            padding: 1rem;
-            height: 250px;
-            overflow-y: auto;
-            background: rgba(0,0,0,0.2);
-            border-radius: 8px;
-            border: 1px solid var(--card-border-color);
-        }
-        .win-log-container p {
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--card-border-color-alpha);
-            font-size: 0.95rem;
-            word-break: break-all;
-        }
-        .win-log-container p:last-child {
-            margin-bottom: 0;
-            border-bottom: none;
-        }
-
         footer { text-align: center; margin-top: 3rem; padding: 1.5rem; color: var(--text-secondary-color); font-size: 0.9rem; }
 
         @media (max-width: 768px) {
@@ -198,6 +193,8 @@
             .result-item-header { display: none; }
             .result-item { grid-template-columns: 1fr 1fr; gap: 1rem; }
             .result-info { grid-column: 1 / -1; }
+            /* ★変更 */
+            .result-info .numbers { display: none; } /* スマホでは非表示に */
             .result-stat { text-align: left; }
             .result-stat::before { content: attr(data-label); display: block; font-size: 0.8rem; color: var(--text-secondary-color); font-weight: 400; }
         }
@@ -208,12 +205,13 @@
     <div class="header-container">
         <header>
             <h1>年末ジャンボ宝くじシミュレーター</h1>
+            <!-- ★変更 -->
             <p>2024年 第1031回全国自治宝くじ (公式情報準拠)</p>
         </header>
         <button id="settings-btn" class="icon-btn" title="設定">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/>
-              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/>
+              <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/>
             </svg>
         </button>
     </div>
@@ -270,30 +268,25 @@
 
             <div class="card">
                 <h2 class="card-header">当選詳細</h2>
-                <!-- ★変更: ヘッダーに当籤番号を追加 -->
                 <div class="result-item-header">
                     <div>等級／当籤金額</div>
-                    <div>当籤番号</div>
                     <div>最新の当せんくじ</div>
                     <div>当せん枚数</div>
                     <div>当せん金額</div>
                     <div>当せん率</div>
                 </div>
                 <div class="results-grid"></div>
-            </div>
-            
-            <!-- ★追加: 当選ログ -->
-            <div class="card">
-                <h2 class="card-header">当選ログ</h2>
-                <div id="win-log" class="win-log-container font-mono">
-                    <p>シミュレーションを開始するとここに当選ログが表示されます。</p>
+                <!-- ★新規追加 -->
+                <div class="win-log-container">
+                    <h3>1等 当選ログ</h3>
+                    <div id="win-log-1st" class="win-log"></div>
                 </div>
             </div>
-
         </main>
         
         <footer>
-            <p>このシミュレーターは、2024年第1031回全国自治宝くじの実際の当選番号に基づいています。シミュレーションであり、実際の当選を保証するものではありません。</p>
+            <!-- ★変更 -->
+            <p>このシミュレーターは、2024年発売の「年末ジャンボ宝くじ」（第1031回 全国自治宝くじ）の当選金・本数に基づき確率を計算しています。実際の当選を保証するものではありません。</p>
         </footer>
     </div>
 
@@ -316,8 +309,7 @@
                     </div>
                 </div>
                 <div class="setting-group">
-                    <h3>当選確率の変更（非推奨）</h3>
-                    <p style="font-size: 0.9em; margin-bottom: 1em; color: var(--text-secondary-color);">注意: このシミュレーターは実際の当選番号で判定を行っています。確率を変更すると、番号に関わらず追加の抽選が行われます。</p>
+                    <h3>当選確率の変更</h3>
                     <div id="probability-settings" class="probability-grid"></div>
                     <p class="cheat-notice">この設定は宝くじシミュレーターの概念を壊す可能性があります。自己責任でご利用ください。</p>
                 </div>
@@ -369,7 +361,7 @@
             const persistResultsToggle = getEl('persist-results-toggle');
             const resetSettingsBtn = getEl('reset-settings-btn');
             const stepAmountInput = getEl('step-amount-input');
-            const winLogContainer = getEl('win-log'); // ★追加
+            const winLog1st = getEl('win-log-1st'); // ★追加
 
             // --- 状態管理 ---
             let simState = {
@@ -381,17 +373,20 @@
                 stepAmount: 1, 
             };
             
-            // ★変更: 2024年 第1031回 年末ジャンボ宝くじの当選データ
-            const WINNING_DATA = {
-                'rank-1':           { rank: '1等',           prize: 700000000, kumi: 184, bango: 152639, prob: 20000000 },
-                'rank-1-zenngo':    { rank: '1等の前後賞',   prize: 150000000, prob: 10000000 },
-                'rank-1-kumichigai':{ rank: '1等の組違い', prize: 100000,    prob: 100502.5 },
-                'rank-2':           { rank: '2等',           prize: 10000000,  bango_last5: [18109, 58953, 78314], prob: 20000000/3 },
-                'rank-3':           { rank: '3等',           prize: 1000000,   bango_last4: "9133", prob: 100000 },
-                'rank-4':           { rank: '4等',           prize: 50000,     bango_last3: "525", prob: 10000 },
-                'rank-5':           { rank: '5等',           prize: 10000,     bango_last2: "73", prob: 1000 },
-                'rank-6':           { rank: '6等',           prize: 3000,      bango_last1: "7", prob: 100 },
-                'rank-7':           { rank: '7等',           prize: 300,       prob: 10 },
+            // --- 当選データと確率 (★2024年情報に更新) ---
+            // 第1031回 全国自治宝くじ (年末ジャンボ) の情報
+            // 発売総額1,320億円、4.4億枚（22ユニット）の場合
+            // 1ユニット = 2,000万枚
+            const PRIZE_DEFINITIONS = {
+                'rank-1':           { rank: '1等',           prize: 700000000, prob: 20000000 },  // 1本/ユニット
+                'rank-1-zenngo':    { rank: '1等の前後賞',   prize: 150000000, prob: 10000000 },  // 2本/ユニット
+                'rank-1-kumichigai':{ rank: '1等の組違い賞', prize: 100000,    prob: 100502.51 }, // 199本/ユニット (20000000/199)
+                'rank-2':           { rank: '2等',           prize: 10000000,  prob: 5000000 },   // 4本/ユニット
+                'rank-3':           { rank: '3等',           prize: 1000000,   prob: 100000 },    // 200本/ユニット
+                'rank-4':           { rank: '4等',           prize: 50000,     prob: 10000 },     // 2,000本/ユニット
+                'rank-5':           { rank: '5等',           prize: 10000,     prob: 1000 },      // 20,000本/ユニット
+                'rank-6':           { rank: '6等',           prize: 3000,      prob: 100 },       // 200,000本/ユニット
+                'rank-7':           { rank: '7等',           prize: 300,       prob: 10 },        // 2,000,000本/ユニット
             };
             let customProbabilities = {};
 
@@ -404,10 +399,11 @@
                         totalCost: 0, totalWin: 0, totalTickets: 0, totalWinsCount: 0,
                         prizes: {}
                     };
-                    Object.keys(WINNING_DATA).forEach(id => {
+                    Object.keys(PRIZE_DEFINITIONS).forEach(id => {
                         resultsData.prizes[id] = { count: 0, amount: 0, latestWin: null };
                     });
-                    winLogContainer.innerHTML = '<p>シミュレーションを開始するとここに当選ログが表示されます。</p>'; // ★追加
+                    // ★追加
+                    if (winLog1st) winLog1st.innerHTML = ''; 
                 }
                 updateAllDisplays();
                 latestTicketEl.textContent = '---組-------番';
@@ -416,36 +412,23 @@
             function initializeUI() {
                 resultsGrid.innerHTML = '';
                 probabilitySettingsContainer.innerHTML = '';
-                Object.entries(WINNING_DATA).forEach(([id, def]) => {
-                    // 当籤番号のテキストを生成
-                    let winningNumText = '-';
-                    if (id === 'rank-1') winningNumText = `${def.kumi}組 ${def.bango}`;
-                    else if (id === 'rank-1-zenngo') winningNumText = `1等の前後`;
-                    else if (id === 'rank-1-kumichigai') winningNumText = `1等の組違い`;
-                    else if (def.bango_last5) winningNumText = `下5桁 ${def.bango_last5.join(', ')}`;
-                    else if (def.bango_last4) winningNumText = `下4桁 ${def.bango_last4}`;
-                    else if (def.bango_last3) winningNumText = `下3桁 ${def.bango_last3}`;
-                    else if (def.bango_last2) winningNumText = `下2桁 ${def.bango_last2}`;
-                    else if (def.bango_last1) winningNumText = `下1桁 ${def.bango_last1}`;
-                    else if (id === 'rank-7') winningNumText = '下1桁 7 (6等と同じ)';
-
+                Object.entries(PRIZE_DEFINITIONS).forEach(([id, def]) => {
                     const el = document.createElement('div');
                     el.className = 'card result-item';
                     el.id = id;
-                    // ★変更: 当籤番号表示用のdivを追加
+                    // ★変更：当選番号表示欄を追加
                     el.innerHTML = `
                         <div class="result-info">
                             <div class="rank">${def.rank}</div>
                             <div class="prize">${def.prize.toLocaleString()}円</div>
+                            <div class="numbers font-mono" data-stat="numbers">当選番号: -</div>
                         </div>
-                        <div class="result-stat winning-num font-mono" data-label="当籤番号">${winningNumText}</div>
                         <div class="result-stat latest-win font-mono" data-label="最新の当せんくじ" data-stat="latest">-</div>
                         <div class="result-stat" data-label="当せん枚数" data-stat="count">0</div>
                         <div class="result-stat" data-label="当せん金額" data-stat="amount">0円</div>
-                        <div class="result-stat" data-label="当せん率" data-stat="rate">0.000%</div>`;
+                        <div class="result-stat" data-label="当せん率" data-stat="rate">0.0000%</div>`;
                     resultsGrid.appendChild(el);
 
-                    // 設定用UI
                     const probEl = document.createElement('div');
                     probEl.className = 'prob-item';
                     probEl.innerHTML = `
@@ -472,74 +455,40 @@
                 recoveryRateEl.textContent = `${recoveryRate} %`;
                 winRateEl.textContent = `${winRate} %`;
 
-                Object.keys(WINNING_DATA).forEach(id => {
+                Object.keys(PRIZE_DEFINITIONS).forEach(id => {
                     const pData = resultsData.prizes[id];
                     const pEl = getEl(id);
                     if (pEl) {
+                        const latestWinText = pData.latestWin ? `${String(pData.latestWin.kumi).padStart(3, '0')}組 ${String(pData.latestWin.bango).padStart(6, '0')}番` : '-';
                         pEl.querySelector('[data-stat="count"]').textContent = pData.count.toLocaleString();
                         pEl.querySelector('[data-stat="amount"]').textContent = pData.amount.toLocaleString() + '円';
-                        pEl.querySelector('[data-stat="latest"]').textContent = pData.latestWin ? `${String(pData.latestWin.kumi).padStart(3, '0')}組 ${String(pData.latestWin.bango).padStart(6, '0')}番` : '-';
+                        pEl.querySelector('[data-stat="latest"]').textContent = latestWinText;
                         const rate = resultsData.totalTickets > 0 ? (pData.count / resultsData.totalTickets * 100).toFixed(6) : '0.000000';
                         pEl.querySelector('[data-stat="rate"]').textContent = `${rate}%`;
+                        // ★追加: 当選番号の表示を更新
+                        pEl.querySelector('[data-stat="numbers"]').textContent = `当選番号: ${latestWinText}`;
                     }
                 });
             }
 
-            // ★変更: 実際の当選番号に基づく抽選ロジック
+            // --- 抽選ロジック (確率ベースに変更) ---
             function checkWin(kumi, bango) {
-                let hasWon = false; // 重複当選を防ぐフラグ
-
-                // 高額当選からチェック
-                if (bango === WINNING_DATA['rank-1'].bango) {
-                    if (kumi === WINNING_DATA['rank-1'].kumi) {
-                        recordWin('rank-1', kumi, bango); hasWon = true;
-                    } else {
-                        recordWin('rank-1-kumichigai', kumi, bango); hasWon = true;
-                    }
-                }
-                if (!hasWon && kumi === WINNING_DATA['rank-1'].kumi && Math.abs(bango - WINNING_DATA['rank-1'].bango) === 1) {
-                    recordWin('rank-1-zenngo', kumi, bango); hasWon = true;
-                }
-                const bangoStr = String(bango).padStart(6, '0');
-                if (!hasWon && WINNING_DATA['rank-2'].bango_last5.includes(bangoStr.slice(-5))) {
-                    recordWin('rank-2', kumi, bango); hasWon = true;
-                }
-                if (!hasWon && bangoStr.slice(-4) === WINNING_DATA['rank-3'].bango_last4) {
-                    recordWin('rank-3', kumi, bango); hasWon = true;
-                }
-                if (!hasWon && bangoStr.slice(-3) === WINNING_DATA['rank-4'].bango_last3) {
-                    recordWin('rank-4', kumi, bango); hasWon = true;
-                }
-                 if (!hasWon && bangoStr.slice(-2) === WINNING_DATA['rank-5'].bango_last2) {
-                    recordWin('rank-5', kumi, bango); hasWon = true;
-                }
-                // 6等と7等は重複する可能性があるが、宝くじのルールでは上位賞が優先されるため、このロジックで正しい。
-                if (!hasWon && bangoStr.slice(-1) === WINNING_DATA['rank-6'].bango_last1) {
-                    recordWin('rank-6', kumi, bango);
-                    // 7等も当選扱い（賞金は別）
-                    recordWin('rank-7', kumi, bango);
-                    hasWon = true;
-                }
-                
-                // 設定画面からの確率チェック（オプション）
-                 Object.entries(customProbabilities).forEach(([id, prob]) => {
+                // 1等の当選番号をシミュレーションの最初に一度だけ決めるなどの厳密な方法もあるが、
+                // ここでは各くじが独立した確率で当選する簡易的なモデルを採用する
+                Object.entries(PRIZE_DEFINITIONS).forEach(([id, def]) => {
+                    const prob = customProbabilities[id] || def.prob;
                     if (Math.random() < 1 / prob) {
-                        // こちらは番号チェックとは別に当選させる
-                        const prizeId = id;
-                        recordWin(prizeId, kumi, bango, true); // isExtraフラグ
+                        recordWin(id, def.prize, kumi, bango);
                     }
                 });
             }
 
-            function recordWin(prizeId, kumi, bango, isExtra = false) {
-                const prizeDef = WINNING_DATA[prizeId];
-                if (!prizeDef) return;
-
+            function recordWin(prizeId, prizeAmount, kumi, bango) {
                 const pData = resultsData.prizes[prizeId];
                 pData.count++;
-                pData.amount += prizeDef.prize;
+                pData.amount += prizeAmount;
                 pData.latestWin = { kumi, bango };
-                resultsData.totalWin += prizeDef.prize;
+                resultsData.totalWin += prizeAmount;
                 resultsData.totalWinsCount++;
                 const pEl = getEl(prizeId);
                 if(pEl) {
@@ -548,23 +497,13 @@
                     pEl.classList.add('win-animation');
                 }
                 
-                // ★追加: 当選ログの記録
-                addWinLog(prizeDef, kumi, bango, isExtra);
-            }
-
-            // ★追加: 当選ログを追加する関数
-            function addWinLog(prizeDef, kumi, bango, isExtra) {
-                if (winLogContainer.childElementCount > 100) {
-                    winLogContainer.removeChild(winLogContainer.lastChild);
+                // ★追加：1等当選ログの記録
+                if (prizeId === 'rank-1' && winLog1st) {
+                    const logEntry = document.createElement('p');
+                    const ticketNumber = `${String(kumi).padStart(3, '0')}組 ${String(bango).padStart(6, '0')}番`;
+                    logEntry.innerHTML = `[${new Date().toLocaleTimeString()}] <span class="log-highlight">1等当選！</span> (${ticketNumber}) - ${resultsData.totalTickets.toLocaleString()}枚目`;
+                    winLog1st.prepend(logEntry); // 新しいログを上に追加
                 }
-                 if (winLogContainer.querySelector('p')?.textContent.includes('シミュレーションを')) {
-                    winLogContainer.innerHTML = '';
-                }
-                const logEntry = document.createElement('p');
-                const ticketStr = `${String(kumi).padStart(3, '0')}組 ${String(bango).padStart(6, '0')}番`;
-                const extraText = isExtra ? ' (確率設定による当選)' : '';
-                logEntry.textContent = `[${prizeDef.rank}] ${prizeDef.prize.toLocaleString()}円！ - ${ticketStr}${extraText}`;
-                winLogContainer.insertBefore(logEntry, winLogContainer.firstChild);
             }
             
             // --- カウントアップ方式の処理 ---
@@ -575,14 +514,13 @@
                 let kumi, bango;
 
                 for (let i = 0; i < amount; i++) {
-                    // 年末ジャンボの仕様: 組は01組から200組まで, 番号は100000番から199999番まで
-                    kumi = Math.floor(Math.random() * 200) + 1;
+                    // 年末ジャンボの組は01組から100組までだが、ユニットによって異なる場合もあるため、ここでは1-200でシミュレート
+                    kumi = Math.floor(Math.random() * 100) + 1; 
                     bango = Math.floor(Math.random() * 100000) + 100000;
+                    resultsData.totalTickets++; // 1枚ずつカウント
+                    resultsData.totalCost += 300;
                     checkWin(kumi, bango);
                 }
-
-                resultsData.totalTickets += amount;
-                resultsData.totalCost += amount * 300;
                 
                 if (kumi && bango) {
                     latestTicketEl.textContent = `${String(kumi).padStart(3, '0')}組 ${String(bango).padStart(6, '0')}番`;
@@ -618,12 +556,12 @@
 
                 setTimeout(() => { 
                     for (let i = 0; i < amount; i++) {
-                        const kumi = Math.floor(Math.random() * 200) + 1;
+                        const kumi = Math.floor(Math.random() * 100) + 1;
                         const bango = Math.floor(Math.random() * 100000) + 100000;
+                        resultsData.totalTickets++;
+                        resultsData.totalCost += 300;
                         checkWin(kumi, bango);
                     }
-                    resultsData.totalTickets += amount;
-                    resultsData.totalCost += amount * 300;
                     updateAllDisplays();
                     startInstantBtn.disabled = false;
                     loader.classList.add('hidden');
@@ -635,9 +573,7 @@
                 customProbabilities = {};
                 queryAll('#probability-settings input').forEach(input => {
                     const id = input.dataset.id;
-                    if (WINNING_DATA[id]) {
-                        input.value = WINNING_DATA[id].prob;
-                    }
+                    input.value = PRIZE_DEFINITIONS[id].prob;
                 });
                 
                 stepAmountInput.value = 1;
@@ -664,9 +600,7 @@
                     if (!simState.persistResults) {
                         initializeResults(true);
                     }
-                    if(newMode === 'countup') {
-                        if (getEl('toggle-btn').textContent !== '停止') startCountUp();
-                    }
+                    if(newMode === 'countup') startCountUp();
                 });
             });
 
@@ -688,9 +622,7 @@
                         customProbabilities[id] = value;
                     } else {
                         delete customProbabilities[id];
-                        if (WINNING_DATA[id]) {
-                           e.target.value = WINNING_DATA[id].prob;
-                        }
+                        e.target.value = PRIZE_DEFINITIONS[id].prob;
                     }
                 }
             });
@@ -720,9 +652,7 @@
             // --- 初期実行 ---
             initializeUI();
             initializeResults(true);
-            if (simState.currentMode === 'countup') {
-                startCountUp();
-            }
+            startCountUp();
         });
     </script>
 </body>
