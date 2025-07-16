@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.5 (Final)</title>
+    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.6 (Final)</title>
     <meta name="description" content="2024年の実際の当籤番号を元に宝くじの当選をシミュレーション。あなたの運を試してみましょう。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -319,7 +319,7 @@
                         <input type="number" id="step-amount-input" class="ticket-input font-mono" value="1" min="1" style="width: 120px; font-size: 1rem;">
                     </div>
                 </div>
-                <div class="setting-group">
+                 <div class="setting-group">
                     <h3>当選確率の変更 (現在無効)</h3>
                     <p style="color: var(--text-secondary-color);">このシミュレーターは実際の当籤番号に基づいているため、確率設定は無効化されています。</p>
                 </div>
@@ -420,7 +420,7 @@
                     { kumi: 60, bango: 122015 }, { kumi: 46, bango: 116185 },
                     { kumi: 60, bango: 110493 }, { kumi: 84, bango: 120749 }
                 ],
-                'rank-3': { bango: [103265, 164169] },
+                'rank-3': { bango: [3265, 64169] }, // ★ BUG FIX: Corrected to 5-digit numbers
                 'rank-4': { bango: 6135 },
                 'rank-5': { bango: 896 },
                 'rank-6': { bango: 64 },
@@ -463,26 +463,21 @@
                     } else if (id === 'rank-1-kumichigai') {
                         numbersHtml = `1等と組違いの同番号`;
                     } else if (id === 'rank-2') {
-                         numbersHtml = WINNING_NUMBERS[id].map(n => `${String(n.kumi).padStart(2,'0')}組 ${String(n.bango).padStart(6,'0')}番`).join('<br>');
+                         numbersHtml = WINNING_NUMBERS[id].map(n => `${String(n.kumi).padStart(3,'0')}組 ${String(n.bango).padStart(6,'0')}番`).join('<br>');
                     } else if (id === 'rank-3') {
-                        numbersHtml = `各組共通 下5ケタ: ${WINNING_NUMBERS[id].bango.join(', ')}`;
-                    } else if (id.startsWith('rank-')) {
-                        const rankNum = parseInt(id.replace('rank-', ''), 10);
-                        let digits = 1;
-                        if (rankNum <= 4) digits = 4;
-                        if (rankNum <= 5) digits = 3;
-                        if (rankNum <= 6) digits = 2;
-                         if (rankNum === 4) digits = 4;
-                         else if (rankNum === 5) digits = 3;
-                         else if (rankNum === 6) digits = 2;
-                         else if (rankNum === 7) digits = 1;
-                        
-                        if(digits > 1) {
-                            numbersHtml = `下${digits}ケタ: ${String(WINNING_NUMBERS[id].bango).padStart(digits,'0')}`;
-                        } else {
-                             numbersHtml = `下${digits}ケタ: ${WINNING_NUMBERS[id].bango}`;
-                        }
+                        // ★ BUG FIX: Display corrected 5-digit numbers with padding
+                        const numbers = WINNING_NUMBERS[id].bango.map(n => String(n).padStart(5, '0'));
+                        numbersHtml = `各組共通 下5ケタ: ${numbers.join(', ')}`;
+                    } else if (id === 'rank-4') {
+                        numbersHtml = `下4ケタ: ${String(WINNING_NUMBERS[id].bango).padStart(4,'0')}`;
+                    } else if (id === 'rank-5') {
+                        numbersHtml = `下3ケタ: ${String(WINNING_NUMBERS[id].bango).padStart(3,'0')}`;
+                    } else if (id === 'rank-6') {
+                        numbersHtml = `下2ケタ: ${String(WINNING_NUMBERS[id].bango).padStart(2,'0')}`;
+                    } else if (id === 'rank-7') {
+                        numbersHtml = `下1ケタ: ${WINNING_NUMBERS[id].bango}`;
                     }
+
 
                     el.innerHTML = `
                         <div class="result-info">
@@ -602,10 +597,11 @@
 
             // --- 抽選ロジック ---
             function checkWin(kumi, bango) {
-                 if (kumi === WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) { recordWin('rank-1', kumi, bango); return; }
+                if (kumi === WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) { recordWin('rank-1', kumi, bango); return; }
                 if (kumi === WINNING_NUMBERS['rank-1'].kumi && Math.abs(bango - WINNING_NUMBERS['rank-1'].bango) === 1) { recordWin('rank-1-zenngo', kumi, bango); }
                 if (kumi !== WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) { recordWin('rank-1-kumichigai', kumi, bango); }
                 for (const winNum of WINNING_NUMBERS['rank-2']) { if (kumi === winNum.kumi && bango === winNum.bango) { recordWin('rank-2', kumi, bango); break; }}
+                // ★ BUG FIX: Correctly check against the 5-digit numbers
                 if (WINNING_NUMBERS['rank-3'].bango.includes(bango % 100000)) { recordWin('rank-3', kumi, bango); }
                 if (bango % 10000 === WINNING_NUMBERS['rank-4'].bango) { recordWin('rank-4', kumi, bango); }
                 if (bango % 1000 === WINNING_NUMBERS['rank-5'].bango) { recordWin('rank-5', kumi, bango); }
