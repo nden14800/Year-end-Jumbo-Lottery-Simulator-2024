@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.3 (Final)</title>
+    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.4 (Final)</title>
     <meta name="description" content="2024年の実際の当籤番号を元に宝くじの当選をシミュレーション。あなたの運を試してみましょう。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -320,8 +320,14 @@
                     </div>
                 </div>
                 <div class="setting-group">
-                    <h3>当選確率の変更 (現在無効)</h3>
-                     <p class="cheat-notice">このシミュレーターは実際の当籤番号に基づいているため、確率設定は無効化されています。</p>
+                    <h3>ログ表示設定</h3>
+                    <div class="toggle-setting">
+                        <p>当選ログを表示する</p>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-log-display" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="setting-group">
                     <h3>モード間の結果引き継ぎ</h3>
@@ -373,6 +379,7 @@
             const logCard = getEl('log-card');
             const logContent = getEl('log-content');
             const logFilterControls = getEl('log-filter-controls');
+            const toggleLogDisplay = getEl('toggle-log-display');
 
             // --- 状態管理 ---
             let simState = {
@@ -383,6 +390,7 @@
                 persistResults: false,
                 stepAmount: 1, 
                 currentLogFilter: 'all',
+                showLog: true,
             };
             
             const MAX_LOG_COUNT = 100;
@@ -429,9 +437,8 @@
                         resultsData.prizes[id] = { count: 0, amount: 0, latestWin: null };
                     });
                 }
-                simState.currentLogFilter = 'all';
+                resetSettings();
                 updateAllDisplays();
-                updateLogDisplay();
                 latestTicketEl.textContent = '---組-------番';
             }
 
@@ -545,7 +552,7 @@
             }
             
             function updateLogDisplay() {
-                if (resultsData.logEntries.length === 0) {
+                if (!simState.showLog || resultsData.logEntries.length === 0) {
                     logCard.style.display = 'none';
                     return;
                 }
@@ -656,6 +663,9 @@
             function resetSettings() {
                 stepAmountInput.value = 1; simState.stepAmount = 1;
                 persistResultsToggle.checked = false; simState.persistResults = false;
+                toggleLogDisplay.checked = true; simState.showLog = true;
+                simState.currentLogFilter = 'all';
+                updateLogDisplay();
             }
 
             // --- イベントリスナー ---
@@ -688,13 +698,19 @@
             settingsBtn.addEventListener('click', () => settingsModal.classList.add('active'));
             modalCloseBtn.addEventListener('click', () => settingsModal.classList.remove('active'));
             settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.remove('active'); });
+            
             stepAmountInput.addEventListener('change', (e) => {
                 const value = parseInt(e.target.value, 10);
                 simState.stepAmount = value > 0 ? value : 1;
                 e.target.value = simState.stepAmount;
             });
             persistResultsToggle.addEventListener('change', (e) => { simState.persistResults = e.target.checked; });
+            toggleLogDisplay.addEventListener('change', (e) => {
+                simState.showLog = e.target.checked;
+                updateLogDisplay();
+            });
             resetSettingsBtn.addEventListener('click', resetSettings);
+
             const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
             function applyTheme(isDark) { document.documentElement.classList.toggle('light', !isDark); }
             darkModeMatcher.addEventListener('change', e => applyTheme(e.matches));
