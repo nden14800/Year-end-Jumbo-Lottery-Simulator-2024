@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.4 (Final)</title>
+    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.5 (Final)</title>
     <meta name="description" content="2024年の実際の当籤番号を元に宝くじの当選をシミュレーション。あなたの運を試してみましょう。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -320,6 +320,10 @@
                     </div>
                 </div>
                 <div class="setting-group">
+                    <h3>当選確率の変更 (現在無効)</h3>
+                    <p style="color: var(--text-secondary-color);">このシミュレーターは実際の当籤番号に基づいているため、確率設定は無効化されています。</p>
+                </div>
+                <div class="setting-group">
                     <h3>ログ表示設定</h3>
                     <div class="toggle-setting">
                         <p>当選ログを表示する</p>
@@ -463,8 +467,21 @@
                     } else if (id === 'rank-3') {
                         numbersHtml = `各組共通 下5ケタ: ${WINNING_NUMBERS[id].bango.join(', ')}`;
                     } else if (id.startsWith('rank-')) {
-                        const digits = 8 - parseInt(id.replace('rank-', ''), 10);
-                        numbersHtml = `下${digits}ケタ: ${String(WINNING_NUMBERS[id].bango).padStart(digits,'0')}`;
+                        const rankNum = parseInt(id.replace('rank-', ''), 10);
+                        let digits = 1;
+                        if (rankNum <= 4) digits = 4;
+                        if (rankNum <= 5) digits = 3;
+                        if (rankNum <= 6) digits = 2;
+                         if (rankNum === 4) digits = 4;
+                         else if (rankNum === 5) digits = 3;
+                         else if (rankNum === 6) digits = 2;
+                         else if (rankNum === 7) digits = 1;
+                        
+                        if(digits > 1) {
+                            numbersHtml = `下${digits}ケタ: ${String(WINNING_NUMBERS[id].bango).padStart(digits,'0')}`;
+                        } else {
+                             numbersHtml = `下${digits}ケタ: ${WINNING_NUMBERS[id].bango}`;
+                        }
                     }
 
                     el.innerHTML = `
@@ -552,10 +569,11 @@
             }
             
             function updateLogDisplay() {
-                if (!simState.showLog || resultsData.logEntries.length === 0) {
+                if (!simState.showLog) {
                     logCard.style.display = 'none';
                     return;
                 }
+                
                 logCard.style.display = 'block';
 
                 const filteredLogs = simState.currentLogFilter === 'all'
@@ -563,7 +581,9 @@
                     : resultsData.logEntries.filter(log => log.prizeId === simState.currentLogFilter);
 
                 let logHtml = '';
-                if (filteredLogs.length > 0) {
+                if (resultsData.logEntries.length === 0) {
+                     logHtml = '<p>まだ当選はありません。</p>';
+                } else if (filteredLogs.length > 0) {
                     logHtml = filteredLogs.map(log => {
                         const def = PRIZE_DEFINITIONS[log.prizeId];
                         const ticketNumberText = `${String(log.kumi).padStart(3, '0')}組 ${String(log.bango).padStart(6, '0')}番`;
@@ -665,6 +685,8 @@
                 persistResultsToggle.checked = false; simState.persistResults = false;
                 toggleLogDisplay.checked = true; simState.showLog = true;
                 simState.currentLogFilter = 'all';
+                logFilterControls.querySelectorAll('.log-filter-btn').forEach(btn => btn.classList.remove('active'));
+                logFilterControls.querySelector('[data-rank="all"]').classList.add('active');
                 updateLogDisplay();
             }
 
