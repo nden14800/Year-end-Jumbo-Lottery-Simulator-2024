@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.8 (Final)</title>
+    <title>年末ジャンボ宝くじシミュレーター | モダン版 v5.9 (Final)</title>
     <meta name="description" content="2024年の実際の当籤番号を元に宝くじの当選をシミュレーション。あなたの運を試してみましょう。">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -391,7 +391,7 @@
             const logContent = getEl('log-content');
             const logFilterControls = getEl('log-filter-controls');
             const toggleLogDisplay = getEl('toggle-log-display');
-            const toggleBackgroundLog = getEl('toggle-background-log'); // ★ NEW
+            const toggleBackgroundLog = getEl('toggle-background-log');
 
             // --- 状態管理 ---
             let simState = {
@@ -403,7 +403,7 @@
                 stepAmount: 1, 
                 currentLogFilter: 'all',
                 showLog: true,
-                recordLogInBackground: true, // ★ NEW
+                recordLogInBackground: true,
             };
             
             const MAX_LOG_COUNT = 100;
@@ -429,7 +429,7 @@
                     { kumi: 60, bango: 122015 }, { kumi: 46, bango: 116185 },
                     { kumi: 60, bango: 110493 }, { kumi: 84, bango: 120749 }
                 ],
-                'rank-3': { bango: [103265, 164169] }, // ★ BUG FIX: Corrected to full 6-digit numbers
+                'rank-3': { bango: [103265, 164169] },
                 'rank-4': { bango: 6135 },
                 'rank-5': { bango: 896 },
                 'rank-6': { bango: 64 },
@@ -473,7 +473,6 @@
                     } else if (id === 'rank-2') {
                          numbersHtml = WINNING_NUMBERS[id].map(n => `${String(n.kumi).padStart(3,'0')}組 ${String(n.bango).padStart(6,'0')}番`).join('<br>');
                     } else if (id === 'rank-3') {
-                        // ★ BUG FIX: Display corrected 6-digit numbers as "common"
                         const numbers = WINNING_NUMBERS[id].bango.map(n => `${n}番`);
                         numbersHtml = `各組共通 ${numbers.join(', ')}`;
                     } else if (id === 'rank-4') {
@@ -546,9 +545,7 @@
                 return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
             }
 
-            // --- ログ関連処理 ---
             function logWin(prizeId, kumi, bango) {
-                // ★ NEW: Check if we should record the log at all.
                 if (simState.showLog || simState.recordLogInBackground) {
                     if (resultsData.logEntries.length >= MAX_LOG_COUNT) {
                         resultsData.logEntries.shift(); 
@@ -603,18 +600,44 @@
                 }
             }
 
-            // --- 抽選ロジック ---
+            // ★★★ BUG FIX: Complete rewrite of the checkWin logic ★★★
             function checkWin(kumi, bango) {
-                if (kumi === WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) { recordWin('rank-1', kumi, bango); return; }
-                if (kumi === WINNING_NUMBERS['rank-1'].kumi && Math.abs(bango - WINNING_NUMBERS['rank-1'].bango) === 1) { recordWin('rank-1-zenngo', kumi, bango); }
-                if (kumi !== WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) { recordWin('rank-1-kumichigai', kumi, bango); }
-                for (const winNum of WINNING_NUMBERS['rank-2']) { if (kumi === winNum.kumi && bango === winNum.bango) { recordWin('rank-2', kumi, bango); break; }}
-                // ★ BUG FIX: Correctly check against the full 6-digit number, not modulo
-                if (WINNING_NUMBERS['rank-3'].bango.includes(bango)) { recordWin('rank-3', kumi, bango); }
-                if (bango % 10000 === WINNING_NUMBERS['rank-4'].bango) { recordWin('rank-4', kumi, bango); }
-                if (bango % 1000 === WINNING_NUMBERS['rank-5'].bango) { recordWin('rank-5', kumi, bango); }
-                if (bango % 100 === WINNING_NUMBERS['rank-6'].bango) { recordWin('rank-6', kumi, bango); }
-                if (bango % 10 === WINNING_NUMBERS['rank-7'].bango) { recordWin('rank-7', kumi, bango); }
+                // 1等 (最優先)
+                if (kumi === WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) {
+                    recordWin('rank-1', kumi, bango);
+                } 
+                // 1等の前後賞
+                else if (kumi === WINNING_NUMBERS['rank-1'].kumi && Math.abs(bango - WINNING_NUMBERS['rank-1'].bango) === 1) {
+                    recordWin('rank-1-zenngo', kumi, bango);
+                } 
+                // 1等の組違い賞
+                else if (kumi !== WINNING_NUMBERS['rank-1'].kumi && bango === WINNING_NUMBERS['rank-1'].bango) {
+                    recordWin('rank-1-kumichigai', kumi, bango);
+                } 
+                // 2等 (some を使って、いずれか一つにマッチしたらtrueを返す)
+                else if (WINNING_NUMBERS['rank-2'].some(winNum => kumi === winNum.kumi && bango === winNum.bango)) {
+                    recordWin('rank-2', kumi, bango);
+                } 
+                // 3等
+                else if (WINNING_NUMBERS['rank-3'].bango.includes(bango)) {
+                    recordWin('rank-3', kumi, bango);
+                } 
+                // 4等
+                else if (bango % 10000 === WINNING_NUMBERS['rank-4'].bango) {
+                    recordWin('rank-4', kumi, bango);
+                } 
+                // 5等
+                else if (bango % 1000 === WINNING_NUMBERS['rank-5'].bango) {
+                    recordWin('rank-5', kumi, bango);
+                } 
+                // 6等
+                else if (bango % 100 === WINNING_NUMBERS['rank-6'].bango) {
+                    recordWin('rank-6', kumi, bango);
+                } 
+                // 7等
+                else if (bango % 10 === WINNING_NUMBERS['rank-7'].bango) {
+                    recordWin('rank-7', kumi, bango);
+                }
             }
 
             function recordWin(prizeId, kumi, bango) {
@@ -634,7 +657,6 @@
                 }
             }
             
-            // --- カウントアップ方式の処理 ---
             function runCountUpStep() {
                 if (!simState.isRunning) return;
                 const amount = simState.stepAmount;
@@ -664,7 +686,6 @@
                 toggleBtn.textContent = '再開';
             }
             
-            // --- 一発告知方式の処理 ---
             function runInstantSim() {
                 const amount = parseInt(ticketAmountInput.value, 10);
                 if (!amount || amount <= 0) { alert('正しい購入枚数を入力してください。'); return; }
@@ -683,12 +704,11 @@
                 }, 50);
             }
             
-            // --- 設定リセット処理 ---
             function resetSettings() {
                 stepAmountInput.value = 1; simState.stepAmount = 1;
                 persistResultsToggle.checked = false; simState.persistResults = false;
                 toggleLogDisplay.checked = true; simState.showLog = true;
-                toggleBackgroundLog.checked = true; simState.recordLogInBackground = true; // ★ NEW
+                toggleBackgroundLog.checked = true; simState.recordLogInBackground = true;
                 simState.currentLogFilter = 'all';
                 logFilterControls.querySelectorAll('.log-filter-btn').forEach(btn => btn.classList.remove('active'));
                 logFilterControls.querySelector('[data-rank="all"]').classList.add('active');
@@ -736,7 +756,6 @@
                 simState.showLog = e.target.checked;
                 updateLogDisplay();
             });
-            // ★ NEW
             toggleBackgroundLog.addEventListener('change', (e) => {
                 simState.recordLogInBackground = e.target.checked;
             });
